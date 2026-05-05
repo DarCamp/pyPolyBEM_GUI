@@ -1,0 +1,91 @@
+
+# =========================
+# VTK VIEWER CLASS
+# =========================
+class VTKViewer(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        layout = QVBoxLayout()
+        self.vtk_widget = QVTKRenderWindowInteractor(self)
+
+        layout.addWidget(self.vtk_widget)
+        self.setLayout(layout)
+
+        # Renderer
+        self.renderer = vtk.vtkRenderer()
+        self.vtk_widget.GetRenderWindow().AddRenderer(self.renderer)
+
+        self.interactor = self.vtk_widget.GetRenderWindow().GetInteractor()
+
+        self.renderer.SetBackground(0.1, 0.1, 0.1)
+        style = vtk.vtkInteractorStyleTrackballCamera()
+        self.interactor.SetInteractorStyle(style)
+
+        self.interactor.Initialize()
+        # self.interactor.Start()
+
+    def load_vtk(self, file_path):
+        self.renderer.RemoveAllViewProps()
+
+        reader = vtk.vtkGenericDataObjectReader()
+        reader.SetFileName(str(file_path))
+        reader.Update()
+
+        data = reader.GetOutput()
+
+        mapper = vtk.vtkDataSetMapper()
+        mapper.SetInputData(data)
+
+        if data.GetCellData().GetScalars():
+            mapper.SetScalarModeToUseCellData()
+            mapper.ScalarVisibilityOn()
+        else:
+            mapper.ScalarVisibilityOff()
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+
+        # opzionale: mostra bordi
+        actor.GetProperty().EdgeVisibilityOn()
+
+        self.renderer.AddActor(actor)
+        self.renderer.ResetCamera()
+
+        self.vtk_widget.GetRenderWindow().Render()
+
+
+    def reset_camera(self):
+        self.renderer.ResetCamera()
+        self.vtk_widget.GetRenderWindow().Render()
+
+
+    def set_wireframe(self):
+        for actor in self.renderer.GetActors():
+            actor.GetProperty().SetRepresentationToWireframe()
+        self.vtk_widget.GetRenderWindow().Render()
+
+
+    def set_surface(self):
+        for actor in self.renderer.GetActors():
+            actor.GetProperty().SetRepresentationToSurface()
+        self.vtk_widget.GetRenderWindow().Render()
+
+
+    def toggle_edges(self, state=True):
+        for actor in self.renderer.GetActors():
+            if state:
+                actor.GetProperty().EdgeVisibilityOn()
+            else:
+                actor.GetProperty().EdgeVisibilityOff()
+        self.vtk_widget.GetRenderWindow().Render()
+
+
+    def set_background_dark(self):
+        self.renderer.SetBackground(0.1, 0.1, 0.1)
+        self.vtk_widget.GetRenderWindow().Render()
+
+
+    def set_background_light(self):
+        self.renderer.SetBackground(1, 1, 1)
+        self.vtk_widget.GetRenderWindow().Render()
